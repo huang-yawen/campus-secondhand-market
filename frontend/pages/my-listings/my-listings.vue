@@ -111,7 +111,7 @@
 						budgetMax: w.budgetMax,
 						status: w.status,
 						statusLabel: this.mapWantedStatus(w.status),
-						time: this.formatTime(w.createdAt)
+						time: this.formatTime(w.createTime)
 					}))
 				} catch (e) {
 					this.goodsList = []

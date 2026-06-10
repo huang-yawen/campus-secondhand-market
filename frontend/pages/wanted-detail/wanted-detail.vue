@@ -37,7 +37,7 @@
 					v-for="(img, idx) in detail.images"
 					:key="idx"
 					class="wd-image-thumb"
-					:src="img"
+					:src="resolveImageUrl(img)"
 					mode="aspectFill"
 					@click="previewImage(idx)"
 				/>
@@ -48,7 +48,7 @@
 		<view class="wd-publisher-card">
 			<view class="wd-pub-left">
 				<view class="wd-pub-avatar" @click="goPublisherProfile">
-					<image v-if="detail.avatar" class="wd-pub-avatar-img" :src="detail.avatar" mode="aspectFill"></image>
+					<image v-if="detail.avatar" class="wd-pub-avatar-img" :src="resolveImageUrl(detail.avatar)" mode="aspectFill"></image>
 					<text v-else class="wd-pub-avatar-emoji">{{ (detail.nickname || detail.username || '?').charAt(0) }}</text>
 				</view>
 				<view class="wd-pub-info">
@@ -93,6 +93,7 @@
 	import { getCategories } from '@/api/item.js'
 	import { createSession } from '@/api/chat.js'
 	import { addWantedFavorite, removeWantedFavorite, getMyFavorites } from '@/api/favorite.js'
+	import { resolveImageUrl } from '@/api/index.js'
 
 	export default {
 		data() {

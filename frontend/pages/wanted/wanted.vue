@@ -88,7 +88,7 @@
 						nickname: item.nickname || '',
 						username: item.username || '',
 						avatar: item.avatar || '',
-						time: this.formatTime(item.createdAt)
+						time: this.formatTime(item.createTime)
 					}))
 				} catch (e) {
 					console.error('加载求购列表失败', e)
