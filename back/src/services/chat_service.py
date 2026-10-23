@@ -1,6 +1,11 @@
 """聊天服务。"""
 
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# 北京时间 (UTC+8)
+beijing_tz = timezone(timedelta(hours=8))
+def now_beijing() -> datetime:
+    return datetime.now(beijing_tz).replace(tzinfo=None)
 from typing import Optional
 
 from sqlmodel import Session, select
@@ -44,7 +49,7 @@ def create_chat_session(item_id: Optional[int], wanted_id: Optional[int], user_i
             wanted_id=wanted_id,
             user1_id=user_id,
             user2_id=other_user_id,
-            created_at=datetime.utcnow(),
+            created_at=now_beijing(),
         )
         session.add(chat)
         session.commit()
@@ -80,12 +85,12 @@ def send_message(session_id: int, user_id: int, message_type: str, content: str)
             message_type=message_type or "text",
             content=content,
             is_read=False,
-            created_at=datetime.utcnow(),
+            created_at=now_beijing(),
         )
         session_ctx.add(msg)
 
         chat.last_message = content[:100] if content else ""
-        chat.last_message_at = datetime.utcnow()
+        chat.last_message_at = now_beijing()
         if chat.user1_id == user_id:
             chat.unread_count += 1
         session_ctx.add(chat)
