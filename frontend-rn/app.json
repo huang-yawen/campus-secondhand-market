@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "frontend-rn",
+    "name": "校园闲置宝",
     "slug": "frontend-rn",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frontendrn",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },

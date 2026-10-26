@@ -31,13 +31,15 @@ def create(data: dict) -> dict:
         session.commit()
         session.refresh(wanted)
 
+        user = session.get(User, wanted.user_id)
+
         image_urls = data.get("imageUrls", [])
         for url in image_urls:
             img = WantedImage(wanted_id=wanted.id, image_url=url)
             session.add(img)
         session.commit()
 
-        return _wanted_to_detail(wanted, image_urls, session)
+        return _wanted_to_detail(wanted, user, image_urls)
 
 
 def list_wanted(
@@ -48,7 +50,7 @@ def list_wanted(
     """求购列表。"""
 
     with Session(engine) as session:
-        stmt = select(Wanted)
+        stmt = select(Wanted, User).join(User, Wanted.user_id == User.id)
         if campus:
             stmt = stmt.where(Wanted.campus == campus)
         if category_id:
@@ -57,20 +59,23 @@ def list_wanted(
             stmt = stmt.where(Wanted.status == status)
         stmt = stmt.order_by(Wanted.created_at.desc())
         items = list(session.exec(stmt).all())
-        return [_wanted_to_card(w, session) for w in items]
+        return [_wanted_to_card(w, u) for w, u in items]
 
 
 def get_by_id(wanted_id: int) -> dict:
     """求购详情。"""
 
     with Session(engine) as session:
-        wanted = session.get(Wanted, wanted_id)
-        if not wanted:
+        result = session.exec(
+            select(Wanted, User).join(User, Wanted.user_id == User.id).where(Wanted.id == wanted_id)
+        ).first()
+        if not result:
             raise ValueError("求购不存在")
+        wanted, user = result
         images = session.exec(
             select(WantedImage).where(WantedImage.wanted_id == wanted_id)
         ).all()
-        return _wanted_to_detail(wanted, [img.image_url for img in images], session)
+        return _wanted_to_detail(wanted, user, [img.image_url for img in images])
 
 
 def update_wanted(wanted_id: int, data: dict) -> None:
@@ -78,7 +83,7 @@ def update_wanted(wanted_id: int, data: dict) -> None:
 
     with Session(engine) as session:
         wanted = session.get(Wanted, wanted_id)
-        if not wanted:
+        if not bool(wanted):
             raise ValueError("求购不存在")
         for key, value in data.items():
             if value is not None and hasattr(wanted, key):
@@ -113,9 +118,10 @@ def my_wanted(user_id: int) -> list[dict]:
 
     with Session(engine) as session:
         items = session.exec(
-            select(Wanted).where(Wanted.user_id == user_id).order_by(Wanted.created_at.desc())
+            select(Wanted, User).join(User, Wanted.user_id == User.id)
+            .where(Wanted.user_id == user_id).order_by(Wanted.created_at.desc())
         ).all()
-        return [_wanted_to_card(w, session) for w in items]
+        return [_wanted_to_card(w, u) for w, u in items]
 
 
 def close_wanted(wanted_id: int, user_id: int) -> None:
@@ -132,22 +138,8 @@ def close_wanted(wanted_id: int, user_id: int) -> None:
         session.commit()
 
 
-def _get_user_info(session: Session, user_id: int) -> dict:
-    """获取用户信息（昵称、用户名、头像）。"""
-    user = session.get(User, user_id)
-    if user:
-        return {
-            "nickname": user.nickname or "",
-            "username": user.username or "",
-            "avatar": user.avatar or "",
-        }
-    return {"nickname": "", "username": "", "avatar": ""}
-
-
-def _wanted_to_card(wanted: Wanted, session: Session = None) -> dict:
+def _wanted_to_card(wanted: Wanted, user: Optional[User] = None) -> dict:
     """求购转卡片视图。"""
-
-    user_info = _get_user_info(session, wanted.user_id) if session else {}
 
     return {
         "id": wanted.id,
@@ -155,19 +147,17 @@ def _wanted_to_card(wanted: Wanted, session: Session = None) -> dict:
         "budgetMin": str(wanted.budget_min),
         "budgetMax": str(wanted.budget_max),
         "campus": wanted.campus,
-        "conditionLevel": wanted.condition_level,
-        "categoryId": wanted.category_id,
         "status": wanted.status,
         "userId": wanted.user_id,
+        "nickname": user.nickname if user else "",
+        "username": user.username if user else "",
+        "avatar": user.avatar if user else "",
         "createdAt": wanted.created_at.isoformat() if wanted.created_at else "",
-        **user_info,
     }
 
 
-def _wanted_to_detail(wanted: Wanted, image_urls: list[str], session: Session = None) -> dict:
+def _wanted_to_detail(wanted: Wanted, user: Optional[User], image_urls: list[str]) -> dict:
     """求购转详情视图。"""
-
-    user_info = _get_user_info(session, wanted.user_id) if session else {}
 
     return {
         "id": wanted.id,
@@ -181,7 +171,9 @@ def _wanted_to_detail(wanted: Wanted, image_urls: list[str], session: Session = 
         "imageUrls": image_urls,
         "status": wanted.status,
         "userId": wanted.user_id,
+        "nickname": user.nickname if user else "",
+        "username": user.username if user else "",
+        "avatar": user.avatar if user else "",
         "createdAt": wanted.created_at.isoformat() if wanted.created_at else "",
         "updatedAt": wanted.updated_at.isoformat() if wanted.updated_at else "",
-        **user_info,
     }
