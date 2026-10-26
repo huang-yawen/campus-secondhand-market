@@ -6,9 +6,11 @@ export type ToastIcon = 'none' | 'success';
 interface ToastState {
   message: string | null;
   icon: ToastIcon;
+  // 对应 uni.showLoading 的文字；null 表示不显示
+  loading: string | null;
 }
 
-export const useToastStore = create<ToastState>(() => ({ message: null, icon: 'none' }));
+export const useToastStore = create<ToastState>(() => ({ message: null, icon: 'none', loading: null }));
 
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -17,4 +19,12 @@ export function showToast(message: string, icon: ToastIcon = 'none'): void {
   clearTimeout(hideTimer);
   useToastStore.setState({ message, icon });
   hideTimer = setTimeout(() => useToastStore.setState({ message: null }), 1500);
+}
+
+export function showLoading(text: string): void {
+  useToastStore.setState({ loading: text });
+}
+
+export function hideLoading(): void {
+  useToastStore.setState({ loading: null });
 }

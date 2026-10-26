@@ -1,13 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { skipToken, useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery, type QueryClient } from '@tanstack/react-query';
 
 import { getMySessions } from '@/api/chat';
-import { getMyBuyOrders, getMySellOrders } from '@/api/order';
-import { parseUtc } from '@/lib/time';
 import { useAuthStore } from '@/stores/auth';
-import type { Order } from '@/types/api';
 
 import { queryKeys } from './keys';
+import { orderActivityTime, useBuyOrders, useSellOrders } from './orders';
 
 const NOTIFY_LAST_SEEN_KEY = 'notifyLastSeen';
 
@@ -18,6 +16,13 @@ async function readNotifyLastSeen(): Promise<string> {
   const now = new Date().toISOString();
   await AsyncStorage.setItem(NOTIFY_LAST_SEEN_KEY, now);
   return now;
+}
+
+// 打开通知页时记下"已读到此刻"，消息角标里的通知数随之清零
+export async function markNotificationsSeen(queryClient: QueryClient): Promise<void> {
+  const now = new Date().toISOString();
+  queryClient.setQueryData(queryKeys.notifyLastSeen, now);
+  await AsyncStorage.setItem(NOTIFY_LAST_SEEN_KEY, now);
 }
 
 export function useNotifyLastSeen() {
@@ -32,30 +37,6 @@ export function useSessions(refetchInterval?: number) {
     queryFn: userId ? () => getMySessions(userId, 1, 50) : skipToken,
     refetchInterval,
   });
-}
-
-export function useSellOrders(refetchInterval?: number) {
-  const userId = useAuthStore((s) => s.user?.id);
-  return useQuery({
-    queryKey: queryKeys.sellOrders(userId ?? 0),
-    queryFn: userId ? () => getMySellOrders(userId) : skipToken,
-    refetchInterval,
-  });
-}
-
-export function useBuyOrders(refetchInterval?: number) {
-  const userId = useAuthStore((s) => s.user?.id);
-  return useQuery({
-    queryKey: queryKeys.buyOrders(userId ?? 0),
-    queryFn: userId ? () => getMyBuyOrders(userId) : skipToken,
-    refetchInterval,
-  });
-}
-
-// 订单的"变动时间"（毫秒）。原项目读的 completeTime/cancelTime/createTime 后端都不返回，
-// 导致通知未读永远是 0；后端实际字段是 updatedAt / createdAt（UTC）
-export function orderActivityTime(order: Order): number {
-  return parseUtc(order.updatedAt || order.createdAt);
 }
 
 // 消息 Tab 角标 = 聊天未读 + 上次查看通知之后有变动的订单数，每 5 秒刷新（与原 tab-bar 一致）

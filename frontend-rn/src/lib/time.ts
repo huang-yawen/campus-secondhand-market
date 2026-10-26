@@ -23,3 +23,13 @@ export function formatDateTime(ms: number): string {
   const d = new Date(ms);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+// 毫秒时间戳 → "x分钟前 / x小时前 / x天前"（原求购页的 formatTime）
+export function formatRelative(ms: number): string {
+  if (Number.isNaN(ms)) return '';
+  const min = Math.max(0, Math.floor((Date.now() - ms) / 60000));
+  if (min < 60) return min + '分钟前';
+  const hour = Math.floor(min / 60);
+  if (hour < 24) return hour + '小时前';
+  return Math.floor(hour / 24) + '天前';
+}

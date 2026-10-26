@@ -12,3 +12,7 @@ export function updateReview(id: number, userId: number, data: ReviewData): Prom
 export function getUserReviews(userId: number): Promise<UserReviews> {
   return get('/api/reviews/user/' + userId);
 }
+
+export function checkReviewed(orderId: number, userId: number): Promise<boolean> {
+  return get('/api/reviews/check', { orderId, userId });
+}

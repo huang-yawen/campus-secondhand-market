@@ -69,16 +69,17 @@ export interface GoodsDetail extends GoodsCard {
   updatedAt: string;
 }
 
+// 可选字段与原页面一致：为空时传 undefined，由后端用默认值
 export interface GoodsPublishData {
   userId?: number;
   title: string;
-  campus: string;
-  conditionLevel: string;
-  description: string;
-  price: number | string;
-  categoryId: number;
+  campus?: string;
+  conditionLevel?: string;
+  description?: string;
+  price: number;
+  // 编辑时可能为 null（后端遇到 null 会跳过该字段，不能用 0 代替）
+  categoryId: number | null;
   imageUrls: string[];
-  coverUrl?: string;
 }
 
 export interface SearchParams {
@@ -232,12 +233,12 @@ export interface WantedDetail extends WantedCard {
 export interface WantedData {
   userId?: number;
   title: string;
-  budgetMin: number | string;
-  budgetMax: number | string;
-  campus: string;
-  conditionLevel: string;
-  description: string;
-  categoryId: number;
+  budgetMin: number;
+  budgetMax: number;
+  campus?: string;
+  conditionLevel?: string;
+  description?: string;
+  categoryId?: number;
   imageUrls: string[];
 }
 

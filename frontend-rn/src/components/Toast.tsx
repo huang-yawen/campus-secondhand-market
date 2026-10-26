@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
 import { useToastStore } from '@/stores/toast';
 import { colors, rpx } from '@/theme';
@@ -7,6 +7,19 @@ import { colors, rpx } from '@/theme';
 export function Toast() {
   const message = useToastStore((s) => s.message);
   const icon = useToastStore((s) => s.icon);
+  const loading = useToastStore((s) => s.loading);
+
+  // 与 uni 一样，toast 优先于 loading 显示
+  if (!message && loading) {
+    return (
+      <View pointerEvents="none" style={styles.overlay}>
+        <View style={[styles.box, styles.boxWithIcon]}>
+          <ActivityIndicator color={colors.white} size="large" style={styles.spinner} />
+          <Text style={styles.text}>{loading}</Text>
+        </View>
+      </View>
+    );
+  }
   if (!message) return null;
 
   return (
@@ -37,6 +50,7 @@ const styles = StyleSheet.create({
     minWidth: rpx(240),
     paddingVertical: rpx(36),
   },
+  spinner: { marginBottom: rpx(16) },
   icon: {
     fontSize: rpx(60),
     color: colors.white,
